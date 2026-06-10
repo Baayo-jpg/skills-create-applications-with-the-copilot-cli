@@ -1,69 +1,70 @@
 #!/usr/bin/env node
 
 /**
- * Simple Node.js CLI Calculator
+ * Calculator module
  * Supported operations:
- *  - add <a> <b>  : addition (a + b)
- *  - sub <a> <b>  : subtraction (a - b)
- *  - mul <a> <b>  : multiplication (a * b)
- *  - div <a> <b>  : division (a / b)  (errors on division by zero)
- *
- * Usage examples:
- *   node src/calculator.js add 2 3   # 5
- *   node src/calculator.js sub 5 2   # 3
- *   node src/calculator.js mul 4 3   # 12
- *   node src/calculator.js div 10 2  # 5
+ *  - addition: add, +, plus
+ *  - subtraction: sub, -, minus
+ *  - multiplication: mul, *, times
+ *  - division: div, /, divide (throws on division by zero)
  */
 
-function printUsageAndExit(code = 1) {
-  console.error('Usage: node src/calculator.js <op> <a> <b>');
-  console.error('Where <op> is one of: add, sub, mul, div');
-  process.exit(code);
+function toNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
-const args = process.argv.slice(2);
-if (args.length !== 3) {
-  printUsageAndExit(2);
+function calculate(a, op, b) {
+  const symbol = String(op).toLowerCase();
+  switch (symbol) {
+    case '+': case 'add': case 'plus':
+      return a + b;
+    case '-': case 'sub': case 'minus':
+      return a - b;
+    case '*': case 'x': case '×': case 'mul': case 'times':
+      return a * b;
+    case '/': case 'div': case 'divide':
+      if (b === 0) throw new Error('Division by zero');
+      return a / b;
+    default:
+      throw new Error('Unsupported operator: ' + op);
+  }
 }
 
-const [op, aStr, bStr] = args;
-const a = Number(aStr);
-const b = Number(bStr);
+module.exports = { toNumber, calculate };
 
-if (!Number.isFinite(a) || !Number.isFinite(b)) {
-  console.error('Error: both operands must be valid numbers.');
-  printUsageAndExit(3);
-}
+// If run directly, act as a small CLI that accepts: node src/calculator.js <op> <a> <b>
+if (require.main === module) {
+  function printUsageAndExit(code = 1) {
+    console.error('Usage: node src/calculator.js <op> <a> <b>');
+    console.error('Where <op> is one of: add, sub, mul, div');
+    process.exit(code);
+  }
 
-let result;
-switch (op) {
-  case 'add':
-    result = a + b;
-    break;
-  case 'sub':
-    result = a - b;
-    break;
-  case 'mul':
-    result = a * b;
-    break;
-  case 'div':
-    if (b === 0) {
-      console.error('Error: division by zero');
-      process.exit(4);
+  const args = process.argv.slice(2);
+  if (args.length !== 3) {
+    printUsageAndExit(2);
+  }
+
+  const [op, aStr, bStr] = args;
+  const a = Number(aStr);
+  const b = Number(bStr);
+
+  if (!Number.isFinite(a) || !Number.isFinite(b)) {
+    console.error('Error: both operands must be valid numbers.');
+    printUsageAndExit(3);
+  }
+
+  try {
+    const result = calculate(a, op, b);
+    if (Number.isInteger(result)) {
+      console.log(result);
+    } else {
+      console.log(parseFloat(result.toPrecision(12)));
     }
-    result = a / b;
-    break;
-  default:
-    console.error(`Error: unknown operation '${op}'.`);
-    printUsageAndExit(5);
+    process.exit(0);
+  } catch (err) {
+    console.error('Error:', err.message);
+    process.exit(4);
+  }
 }
-
-// Print the numeric result to stdout
-if (Number.isInteger(result)) {
-  console.log(result);
-} else {
-  // For non-integer results, print up to 12 significant digits to avoid floating noise
-  console.log(parseFloat(result.toPrecision(12)));
-}
-
-process.exit(0);
